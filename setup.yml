@@ -1,0 +1,169 @@
+---
+- name: Ansible Mindcraft Server - https://www.linux.com/learn/how-build-minecraft-server-raspberry-pi-3
+  hosts: rpi
+  become_user: root
+  become: yes
+
+  tasks:    
+    - name: Update apt-get cache
+      apt: >
+        update_cache=yes
+        cache_valid_time=360   
+    - name: Update all packages to the latest version
+      apt: > 
+        upgrade=yes
+
+    - name: Remove repositorie "raspi-gpio" package
+      apt:
+        name: raspi-gpio
+        state: absent
+        purge: yes
+
+    - name: Remove repositorie "xcompmgr" package
+      apt:
+        name: xcompmgr 
+        state: absent
+        purge: yes
+    
+    - name: Remove repositorie "libgl1-mesa-dri" package
+      apt:
+        name: libgl1-mesa-dri
+        state: absent
+        purge: yes
+
+    - name: Remove repositorie "libalut0" package
+      apt:
+        name: libalut0 
+        state: absent
+        purge: yes
+
+    - name: Remove repositorie "libalut-dev" package
+      apt:
+        name: libalut-dev
+        state: absent
+        purge: yes
+
+    - name: Remove repositorie "mesa-utils" package
+      apt:
+        name: mesa-utils
+        state: absent
+        purge: yes
+
+    - name: Add repositorie "raspi-gpio" package
+      apt:
+        name: raspi-gpio
+        state: present
+       
+    - name: Add repositorie "xcompmgr" package
+      apt:
+        name: xcompmgr
+        state: present
+
+    - name: Add repositorie "libgl1-mesa-dri" package
+      apt:
+        name: libgl1-mesa-dri
+        state: present
+    
+    - name: Add repositorie "libalut0" package
+      apt:
+        name: libalut0
+        state: present
+    
+    - name: Add repositorie "libalut-dev" package
+      apt:
+        name: libalut-dev
+        state: present
+
+    - name: Add repositorie "mesa-utils" package
+      apt:
+        name: mesa-utils
+        state: present
+
+    - name: Create path /Minecraft
+      file: 
+        path=/home/pi/Minecraft 
+        state=absent
+
+    - name: Create path /Minecraft
+      file:
+        path=/home/pi/Minecraft
+        state=directory
+
+    - name: Create path Natives
+      file: 
+        path=/home/pi/Minecraft/Natives
+        state=directory
+    
+    - name: Enable GL driver 1
+      replace:
+        name: /boot/config.txt
+        regexp: '^dtoverlay=vc4-fkms-v3d'
+        replace: '#dtoverlay=vc4-fkms-v3d'
+
+    - name: Enable GL driver 2
+      replace:
+        name: /boot/config.txt
+        regexp: '^#dtoverlay=vc4-kms-v3d'
+        replace: 'dtoverlay=vc4-kms-v3d'
+    
+    - name: Enable GL driver 3
+      lineinfile:
+        name: /boot/config.txt
+        line: 'dtoverlay=vc4-kms-v3d\n'
+
+    - name: download Minecraft.jar
+      get_url:
+        url: https://s3.amazonaws.com/Minecraft.Download/launcher/Minecraft.jar
+        dest: /tmp
+
+    - name: download Minecraft.jar
+      get_url:
+        url: https://s3.amazonaws.com/Minecraft.Download/versions/1.11.2/minecraft_server.1.11.2.jar    
+        dest: /home/pi/Minecraft/Natives
+
+    - name:
+      unarchive:
+        src: /home/pi/Minecraft/Natives/minecraft_server.1.11.2.jar
+        dest:  /home/pi/Minecraft/Natives
+        remote_src: True
+
+    - name: download file liblwjgl.so
+      get_url:
+        url: https://www.dropbox.com/s/4oxcvz3ky7a3x6f/liblwjgl.so
+        dest: /home/pi/Minecraft/Natives
+
+    - name: download file libopenal.so
+      get_url:
+        url: https://www.dropbox.com/s/m0r8e01jg2og36z/libopenal.so
+        dest: /home/pi/Minecraft/Natives
+
+    - name: delete lwjgl-2.9.4-nightly-20150209.jar
+      file: 
+        path: /home/pi/Minecraft/Natives/lwjgl-2.9.4-nightly-20150209.jar
+        state: absent
+    
+    - name: download file lwjgl-2.9.4-nightly-20150209.jar
+      get_url:
+        url: https://www.dropbox.com/s/mj15sz3bub4dmr6/lwjgl-2.9.4-nightly-20150209.jar
+        dest: /home/pi/Minecraft/Natives/
+   
+    - name: download file run.sh
+      get_url:
+        url: https://www.dropbox.com/s/jkhr58apwa7pt1w/run.sh
+        dest: /tmp
+
+    - name: run.sh
+      copy:
+        src: ./run.sh
+        dest: /home/pi/Minecraft/run.sh
+
+    - name: set execute run.sh
+      file:
+        path: /home/pi/Minecraft/run.sh
+        mode: 0777
+
+    - name: start Minecraft run.sh
+      command: ./run.sh
+      args:
+        chdir: /home/pi/Minecraft
+
